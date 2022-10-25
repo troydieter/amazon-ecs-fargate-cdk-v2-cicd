@@ -8,6 +8,8 @@ import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 import * as codepipeline from 'aws-cdk-lib/aws-codepipeline';
 import * as codepipeline_actions from 'aws-cdk-lib/aws-codepipeline-actions';
 import { Construct } from 'constructs';
+import { Certificate, CertificateValidation } from 'aws-cdk-lib/aws-certificatemanager';
+import { HostedZone } from 'aws-cdk-lib/aws-route53';
 
 export class EcsCdkStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -41,6 +43,18 @@ export class EcsCdkStack extends cdk.Stack {
       natGateways: 1,
       maxAzs: 3  /* does a sample need 3 az's? */
     });
+
+    // Added ACM
+    const domain_zone_name = HostedZone.fromLookup(this, "domain_zone_name", { domainName: this.node.tryGetContext('domain_zone_name') })
+
+    const cert = new Certificate(
+      this,
+      "certificate",
+      {
+        domainName: this.node.tryGetContext('domain_name'),
+        validation: CertificateValidation.fromDns(domain_zone_name),
+      }
+    );
 
     const clusteradmin = new iam.Role(this, 'adminrole', {
       assumedBy: new iam.AccountRootPrincipal()
@@ -95,12 +109,17 @@ export class EcsCdkStack extends cdk.Stack {
       protocol: ecs.Protocol.TCP
     });
 
+    // Updated to include ACM
     const fargateService = new ecs_patterns.ApplicationLoadBalancedFargateService(this, "ecs-service", {
       cluster: cluster,
       taskDefinition: taskDef,
       publicLoadBalancer: true,
       desiredCount: 1,
-      listenerPort: 80
+      listenerPort: 443,
+      certificate: cert,
+      redirectHTTP: true,
+      domainName: this.node.tryGetContext('domain_name'),
+      domainZone: domain_zone_name
     });
 
 

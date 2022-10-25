@@ -35,6 +35,8 @@
     "@aws-cdk/core:target-partitions": [
       "aws",
       "aws-cn"
-    ]
+    ],
+    "domain_name": "fargate.troydieter.com",
+    "domain_zone_name": "troydieter.com."
   }
 }
