@@ -115,7 +115,6 @@ export class EcsCdkStack extends cdk.Stack {
       taskDefinition: taskDef,
       publicLoadBalancer: true,
       desiredCount: 1,
-      listenerPort: 443,
       certificate: cert,
       redirectHTTP: true,
       domainName: this.node.tryGetContext('domain_name'),
